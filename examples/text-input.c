@@ -31,11 +31,15 @@ static struct wl_compositor *compositor = NULL;
 static struct wl_seat *seat = NULL;
 static struct xdg_wm_base *wm_base = NULL;
 static struct zwp_text_input_manager_v3 *text_input_manager = NULL;
-static struct zwp_text_input_v3 *text_input	= NULL;
 
 struct wlr_egl egl;
 struct wl_egl_window *egl_window;
 struct wlr_egl_surface *egl_surface;
+
+struct text_input_client {
+	struct zwp_text_input_v3 *text_input;
+	char *fudi;
+};
 
 static void draw(void) {
 	eglMakeCurrent(egl.display, egl_surface, egl_surface, egl.context);
@@ -72,12 +76,20 @@ void text_input_handle_leave(void *data,
 	draw();
 }
 
+void text_input_handle_preedit_string(void *data,
+		struct zwp_text_input_v3 *zwp_text_input_v3,
+		const char *text, uint32_t cursor) {
+	fprintf(stderr, "text: %s\n", text);
+	struct text_input_client *it = data;
+	fprintf(stderr, "fudi?: %s\n", it->fudi);
+}
+
 static const struct zwp_text_input_v3_listener text_input_listener = {
 	.enter = text_input_handle_enter,
 	.leave = text_input_handle_leave,
 	.commit_string = noop,
 	.delete_surrounding_text = noop,
-	.preedit_string = noop,
+	.preedit_string = text_input_handle_preedit_string,
 };
 
 static void xdg_surface_handle_configure(void *data,
@@ -163,10 +175,12 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "text-input not available\n");
 		return EXIT_FAILURE;
 	}
+	struct text_input_client *itest = calloc(1, sizeof(struct text_input_client));
+	itest->fudi = "megafudi";
 
-	text_input = zwp_text_input_manager_v3_get_text_input(text_input_manager, seat);
+	itest->text_input = zwp_text_input_manager_v3_get_text_input(text_input_manager, seat);
 
-	zwp_text_input_v3_add_listener(text_input, &text_input_listener, NULL);
+	zwp_text_input_v3_add_listener(itest->text_input, &text_input_listener, itest);
 
 
 	wlr_egl_init(&egl, EGL_PLATFORM_WAYLAND_EXT, display, NULL,

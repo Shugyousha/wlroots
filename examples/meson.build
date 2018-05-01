@@ -7,6 +7,7 @@ lib_shared = static_library(
 
 threads = dependency('threads')
 wayland_cursor = dependency('wayland-cursor')
+cairo = dependency('cairo')
 
 executable('simple', 'simple.c', dependencies: wlroots, link_with: lib_shared)
 executable('pointer', 'pointer.c', dependencies: wlroots, link_with: lib_shared)
@@ -65,5 +66,9 @@ executable(
 executable(
 	'text-input',
 	'text-input.c',
-	dependencies: [wayland_cursor, wayland_client, wlr_protos, wlroots]
+	'shm.c',
+	'ui.c',
+	'util.c',
+	'draw.c',
+	dependencies: [wayland_cursor, wayland_client, wlr_protos, wlroots, cairo]
 )
