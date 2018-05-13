@@ -508,6 +508,11 @@ init_ui(void) {
 	struct text_input_client *ticlient = calloc(1, sizeof(struct text_input_client));
 	ticlient->fudi = "megafudi";
 
+	if (!ui->text_input_manager) {
+		fprintf(stderr, "There is no text input manager. Exiting.\n");
+		exit(1);
+	}
+
 	ticlient->text_input = zwp_text_input_manager_v3_get_text_input(ui->text_input_manager, ui->seat);
 	zwp_text_input_v3_add_listener(ticlient->text_input, &text_input_listener, ticlient);
 
