@@ -9,7 +9,6 @@
 #include <wlr/render/egl.h>
 
 #include "text-input-unstable-v3-client-protocol.h"
-#include "xdg-shell-client-protocol.h"
 #include "ui.h"
 #include "shm.h"
 
@@ -25,208 +24,20 @@
  * focus and releasing text input.
  */
 
-static int sleeptime = 0;
-
-static int enabled = 0;
-
-static struct wl_display *display = NULL;
-static struct wl_compositor *compositor = NULL;
-static struct wl_seat *seat = NULL;
-static struct xdg_wm_base *wm_base = NULL;
-static struct zwp_text_input_manager_v3 *text_input_manager = NULL;
-
-struct wlr_egl egl;
-struct wl_egl_window *egl_window;
-struct wlr_egl_surface *egl_surface;
-
-struct text_input_client {
-	struct wl_shm *shm;
-	struct window *win;
-	struct zwp_text_input_v3 *text_input;
-	char *fudi;
-	int width;
-	int height;
-};
-
-static void noop() {}
-
-void text_input_handle_enter(void *data,
-		struct zwp_text_input_v3 *zwp_text_input_v3,
-		struct wl_surface *surface) {
-
-	struct text_input_client *ti = data;
-
-	enabled = 1;
-	zwp_text_input_v3_enable(zwp_text_input_v3, 0);
-
-	window_redraw(ti->win);
-}
-
-void text_input_handle_leave(void *data,
-		struct zwp_text_input_v3 *zwp_text_input_v3,
-		struct wl_surface *surface) {
-
-	struct text_input_client *ti = data;
-
-	enabled = 2;
-
-	window_redraw(ti->win);
-
-	wl_display_roundtrip(display);
-	sleep(sleeptime);
-	zwp_text_input_v3_disable(zwp_text_input_v3);
-	enabled = 0;
-
-	window_redraw(ti->win);
-}
-
-void text_input_handle_preedit_string(void *data,
-		struct zwp_text_input_v3 *zwp_text_input_v3,
-		const char *text, uint32_t cursor) {
-	fprintf(stderr, "text: %s\n", text);
-	struct text_input_client *ti = data;
-	fprintf(stderr, "fudi?: %s\n", ti->fudi);
-}
-
-static const struct zwp_text_input_v3_listener text_input_listener = {
-	.enter = text_input_handle_enter,
-	.leave = text_input_handle_leave,
-	.commit_string = noop,
-	.delete_surrounding_text = noop,
-	.preedit_string = text_input_handle_preedit_string,
-};
-
-static void xdg_surface_handle_configure(void *data,
-		struct xdg_surface *xdg_surface, uint32_t serial) {
-	xdg_surface_ack_configure(xdg_surface, serial);
-
-	//struct text_input_client *ti = data;
-	//ti->width = w;
-	//ti->height = h;
-	fprintf(stderr, "surface configure called: serial: %d\n", serial);
-}
-
-static const struct xdg_surface_listener xdg_surface_listener = {
-	.configure = xdg_surface_handle_configure,
-};
-
-static void xdg_toplevel_handle_configure(void *data,
-		struct xdg_toplevel *xdg_toplevel, int32_t w, int32_t h,
-		struct wl_array *states) {
-
-	struct text_input_client *ti = data;
-	ti->width = w;
-	ti->height = h;
-	fprintf(stderr, "xdg toplevel called: w: %d, h: %d\n", w, h);
-}
-
-static void xdg_toplevel_handle_close(void *data,
-		struct xdg_toplevel *xdg_toplevel) {
-	exit(EXIT_SUCCESS);
-}
-
-static const struct xdg_toplevel_listener xdg_toplevel_listener = {
-	.configure = xdg_toplevel_handle_configure,
-	.close = xdg_toplevel_handle_close,
-};
-
-static void handle_global(void *data, struct wl_registry *registry,
-		uint32_t name, const char *interface, uint32_t version) {
-
-	struct text_input_client *ticlient = data;
-
-	if (strcmp(interface, "wl_compositor") == 0) {
-		compositor = wl_registry_bind(registry, name,
-			&wl_compositor_interface, 1);
-	} else if (strcmp(interface, xdg_wm_base_interface.name) == 0) {
-		wm_base = wl_registry_bind(registry, name, &xdg_wm_base_interface, 1);
-	} else if(strcmp(interface, "wl_shm") == 0) {
-		ticlient->shm = wl_registry_bind(registry, name, &wl_shm_interface, 1);
-	} else if (strcmp(interface, zwp_text_input_manager_v3_interface.name) == 0) {
-		text_input_manager = wl_registry_bind(registry, name,
-			&zwp_text_input_manager_v3_interface, 1);
-
-	} else if (strcmp(interface, wl_seat_interface.name) == 0) {
-		seat = wl_registry_bind(registry, name, &wl_seat_interface, version);
-	}
-}
-
-static void handle_global_remove(void *data, struct wl_registry *registry,
-		uint32_t name) {
-	// who cares
-}
-
-static const struct wl_registry_listener registry_listener = {
-	.global = handle_global,
-	.global_remove = handle_global_remove,
-};
-
 int main(int argc, char **argv) {
-	int width = 640;
-	int height = 480;
-
-	if (argc > 1) {
-		sleeptime = atoi(argv[1]);
-	}
-
-	display = wl_display_connect(NULL);
-	if (display == NULL) {
-		fprintf(stderr, "Failed to create display\n");
+	struct wayland_t *ui = init_ui();
+	if (!ui) {
+		fprintf(stderr, "could not create client\n");
 		return EXIT_FAILURE;
 	}
 
-	struct wayland_t *backend = init_ui();
-	struct window *win = window_create(backend, width, height);
-	if (!win) {
-		fprintf(stderr, "could not create window\n");
-		return EXIT_FAILURE;
+	int ret = 0;
+	while(ret != -1) {
+		ui_redraw(ui);
+		ret = wl_display_dispatch(ui->display);
 	}
 
-	struct text_input_client *ticlient = calloc(1, sizeof(struct text_input_client));
-	ticlient->fudi = "megafudi";
-	ticlient->win = win;
-	ticlient->width = width;
-	ticlient->height = height;
-
-	struct wl_registry *registry = wl_display_get_registry(display);
-	wl_registry_add_listener(registry, &registry_listener, ticlient);
-	wl_display_dispatch(display);
-	wl_display_roundtrip(display);
-
-	if (compositor == NULL) {
-		fprintf(stderr, "wl-compositor not available\n");
-		return EXIT_FAILURE;
-	}
-	if (wm_base == NULL) {
-		fprintf(stderr, "xdg-shell not available\n");
-		return EXIT_FAILURE;
-	}
-	if (text_input_manager == NULL) {
-		fprintf(stderr, "text-input not available\n");
-		return EXIT_FAILURE;
-	}
-
-	ticlient->text_input = zwp_text_input_manager_v3_get_text_input(text_input_manager, seat);
-
-	zwp_text_input_v3_add_listener(ticlient->text_input, &text_input_listener, ticlient);
-
-	struct wl_surface *surface = wl_compositor_create_surface(compositor);
-	struct xdg_surface *xdg_surface =
-		xdg_wm_base_get_xdg_surface(wm_base, surface);
-	struct xdg_toplevel *xdg_toplevel = xdg_surface_get_toplevel(xdg_surface);
-
-	xdg_surface_add_listener(xdg_surface, &xdg_surface_listener, ticlient);
-	xdg_toplevel_add_listener(xdg_toplevel, &xdg_toplevel_listener, ticlient);
-
-	wl_surface_commit(surface);
-
-	wl_display_roundtrip(display);
-
-	window_redraw(win);
-
-	while (wl_display_dispatch(display) != -1) {
-		// This space intentionally left blank
-	}
+	exit_ui(ui);
 
 	return EXIT_SUCCESS;
 }

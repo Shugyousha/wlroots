@@ -17,9 +17,10 @@ paint_surface(cairo_surface_t *cairo_surface, struct wayland_t *ui){
 	cairo_paint(cr);
 
 	cairo_set_source_rgba(cr,0,1,0,1);
-	cairo_rectangle (cr, 0, 0, nredraw, 3);
-	if (nredraw++ > 400)
+	cairo_rectangle(cr, 0, 0, nredraw, 3);
+	if (nredraw++ > ui->width) {
 		nredraw = 0;
+	}
 	cairo_fill(cr);
 	cairo_destroy(cr);
 }

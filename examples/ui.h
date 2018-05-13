@@ -9,6 +9,11 @@ struct rectangle {
 	int height;
 };
 
+struct text_input_client {
+	struct zwp_text_input_v3 *text_input;
+	char *fudi;
+};
+
 struct wayland_t {
 	struct wl_display *display;
 	struct wl_output *output;
@@ -28,11 +33,14 @@ struct wayland_t {
 	struct wl_data_device_manager *data_device_manager;
 	struct wl_data_device *data_device;
 
-	struct egl_ui *egl;
-
 	struct xkb *xkb;
 
+	struct zwp_text_input_manager_v3 *text_input_manager;
+	struct text_input_client *ticlient;
+
 	struct window* window;
+	int width;
+	int height;
 
 	float px, py; /* pointer position */
 	int resize;

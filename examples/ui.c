@@ -15,6 +15,8 @@
 #include "ui.h"
 #include "shm.h"
 
+#include "text-input-unstable-v3-client-protocol.h"
+
 #define MOD_MASK_ANY	UINT_MAX
 #define MOD_MASK_NONE	0
 #define MOD_MASK_CTRL	(1<<0)
@@ -29,6 +31,50 @@ struct xkb{
 	xkb_mod_index_t ctrl, alt, shift, logo;
 	unsigned int mods;
 };
+
+static void noop() {}
+
+void text_input_handle_enter(void *data,
+		struct zwp_text_input_v3 *zwp_text_input_v3,
+		struct wl_surface *surface) {
+
+	//struct text_input_client *ti = data;
+
+	zwp_text_input_v3_enable(zwp_text_input_v3, 0);
+
+	// window_redraw(ti->win);
+}
+
+void text_input_handle_leave(void *data,
+		struct zwp_text_input_v3 *zwp_text_input_v3,
+		struct wl_surface *surface) {
+
+	// struct text_input_client *ti = data;
+
+	// window_redraw(ti->win);
+
+	//sleep(sleeptime);
+	zwp_text_input_v3_disable(zwp_text_input_v3);
+
+	// window_redraw(ti->win);
+}
+
+void text_input_handle_preedit_string(void *data,
+		struct zwp_text_input_v3 *zwp_text_input_v3,
+		const char *text, uint32_t cursor) {
+	fprintf(stderr, "text: %s\n", text);
+	struct text_input_client *ti = data;
+	fprintf(stderr, "fudi?: %s\n", ti->fudi);
+}
+
+static const struct zwp_text_input_v3_listener text_input_listener = {
+	.enter = text_input_handle_enter,
+	.leave = text_input_handle_leave,
+	.commit_string = noop,
+	.delete_surrounding_text = noop,
+	.preedit_string = text_input_handle_preedit_string,
+};
+
 
 void
 registry_handle_global(void *data, struct wl_registry *registry, uint32_t name,
@@ -50,6 +96,9 @@ registry_handle_global(void *data, struct wl_registry *registry, uint32_t name,
 	} else if (strcmp(interface, "wl_data_device_manager") == 0) {
 		ui->data_device_manager = wl_registry_bind(registry, name,
 					 &wl_data_device_manager_interface, 1);
+	} else if (strcmp(interface, zwp_text_input_manager_v3_interface.name) == 0) {
+		ui->text_input_manager = wl_registry_bind(registry, name,
+			&zwp_text_input_manager_v3_interface, 1);
 	}
 }
 
@@ -168,8 +217,6 @@ keyboard_handle_modifiers(void *data, struct wl_keyboard *keyboard,
 	if (mod_mask & (1 << ui->xkb->logo))
 		ui->xkb->mods |= MOD_MASK_LOGO;
 }
-
-static void noop() {}
 
 static const struct wl_keyboard_listener keyboard_listener = {
 	.keymap = keyboard_handle_keymap,
@@ -451,7 +498,20 @@ init_ui(void) {
 	wl_data_device_add_listener(ui->data_device, &data_device_listener,
 				    ui);
 
-	ui->window = window_create(ui, 400, 300);
+	int width = 640;
+	int height = 480;
+	ui->width = width;
+	ui->height = height;
+	ui->window = window_create(ui, width, height);
+
+
+	struct text_input_client *ticlient = calloc(1, sizeof(struct text_input_client));
+	ticlient->fudi = "megafudi";
+
+	ticlient->text_input = zwp_text_input_manager_v3_get_text_input(ui->text_input_manager, ui->seat);
+	zwp_text_input_v3_add_listener(ticlient->text_input, &text_input_listener, ticlient);
+
+	ui->ticlient = ticlient;
 
 	ui->need_redraw = 1;
 	return ui;
