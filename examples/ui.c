@@ -162,7 +162,7 @@ ui_toggle_fullscreen(struct wayland_t *ui){
 							0, NULL);
 	}else{
 		wl_shell_surface_set_toplevel(ui->shell_surface);
-		window_resize(ui->window, 400, 400);
+		window_resize(ui->window, ui->width, ui->height);
 		ui->need_redraw = 1;
 	}
 }
