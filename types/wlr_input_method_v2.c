@@ -12,6 +12,37 @@
 #include "util/signal.h"
 
 static const struct zwp_input_method_v2_interface input_method_impl;
+static struct wlr_input_popup_surface_v2 *popup_surface_from_resource(struct wl_resource *resource);
+
+static void input_popup_surface_destroy(struct wlr_input_popup_surface_v2 *popup_surface) {
+	wlr_signal_emit_safe(&popup_surface->events.destroy, popup_surface);
+	free(popup_surface);
+}
+
+static void input_popup_surface_resource_destroy(struct wl_resource *resource) {
+	struct wlr_input_popup_surface_v2 *popup_surface =
+		popup_surface_from_resource(resource);
+	if (!popup_surface) {
+		return;
+	}
+	input_popup_surface_destroy(popup_surface);
+}
+
+static void input_popup_surface_destroy_handler(struct wl_client *client,
+		struct wl_resource *resource) {
+	wl_resource_destroy(resource);
+}
+
+static const struct zwp_input_popup_surface_v2_interface input_popup_surface_impl = {
+	.destroy = input_popup_surface_destroy_handler,
+};
+
+static struct wlr_input_popup_surface_v2 *popup_surface_from_resource(
+		struct wl_resource *resource) {
+	assert(wl_resource_instance_of(resource,
+		&zwp_input_popup_surface_v2_interface, &input_popup_surface_impl));
+	return wl_resource_get_user_data(resource);
+}
 
 static struct wlr_input_method_v2 *input_method_from_resource(
 		struct wl_resource *resource) {
@@ -96,8 +127,45 @@ static void im_delete_surrounding_text(struct wl_client *client,
 
 static void im_get_input_popup_surface(struct wl_client *client,
 		struct wl_resource *resource, uint32_t id,
-		struct wl_resource *surface) {
-	wlr_log(WLR_INFO, "Stub: zwp_input_method_v2::get_input_popup_surface");
+		struct wl_resource *surface_resource) {
+
+	// TODO:
+	// * implement getting placement information
+	// * use xdg_popup and layer_shell_popup to create a popup in
+	//   virtboard as demonstrated in examples/layer-shell.c
+
+	struct wlr_surface *surface = wlr_surface_from_resource(surface_resource);
+
+	struct wlr_input_method_v2 *input_method =
+		input_method_from_resource(resource);
+	if (!input_method) {
+		return;
+	}
+
+	struct wlr_input_popup_surface_v2 *popup_surface = calloc(1,
+		sizeof(struct wlr_input_popup_surface_v2));
+	if (!popup_surface) {
+		wl_client_post_no_memory(client);
+		return;
+	}
+
+	wl_signal_init(&popup_surface->events.text_input_rectangle);
+	wl_signal_init(&popup_surface->events.destroy);
+	int version = wl_resource_get_version(resource);
+	struct wl_resource *popup_surface_resource = wl_resource_create(client,
+		&zwp_input_popup_surface_v2_interface, version, id);
+	if (!popup_surface_resource) {
+		free(popup_surface);
+		wl_client_post_no_memory(client);
+		return;
+	}
+	wl_resource_set_implementation(popup_surface_resource, &input_popup_surface_impl,
+		input_method, input_popup_surface_resource_destroy);
+
+	popup_surface->resource = popup_surface_resource;
+	popup_surface->surface = surface;
+	wl_signal_add(&surface->events.destroy, &popup_surface->surface_destroy);
+}
 }
 
 
