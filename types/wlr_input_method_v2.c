@@ -166,6 +166,12 @@ static void im_get_input_popup_surface(struct wl_client *client,
 	popup_surface->surface = surface;
 	wl_signal_add(&surface->events.destroy, &popup_surface->surface_destroy);
 }
+
+void wlr_input_popup_surface_v2_send_text_input_rectangle(
+		struct wlr_input_popup_surface_v2 *popup_surface,
+		int32_t x, int32_t y, int32_t width, int32_t height) {
+	zwp_input_popup_surface_v2_send_text_input_rectangle(popup_surface->resource,
+		x, y, width, height);
 }
 
 

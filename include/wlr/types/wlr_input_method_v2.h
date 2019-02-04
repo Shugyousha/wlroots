@@ -100,4 +100,7 @@ void wlr_input_method_v2_send_text_change_cause(
 void wlr_input_method_v2_send_done(struct wlr_input_method_v2 *input_method);
 void wlr_input_method_v2_send_unavailable(
 	struct wlr_input_method_v2 *input_method);
+void wlr_input_popup_surface_v2_send_text_input_rectangle(
+		struct wlr_input_popup_surface_v2 *popup_surface,
+		int32_t x, int32_t y, int32_t width, int32_t height);
 #endif
