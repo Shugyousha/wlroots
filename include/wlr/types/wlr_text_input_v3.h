@@ -51,10 +51,11 @@ struct wlr_text_input_v3 {
 	struct wl_listener seat_destroy;
 
 	struct {
-		struct wl_signal enable; // (struct wlr_text_input_v3*)
-		struct wl_signal commit; // (struct wlr_text_input_v3*)
-		struct wl_signal disable; // (struct wlr_text_input_v3*)
-		struct wl_signal destroy; // (struct wlr_text_input_v3*)
+		struct wl_signal enable;           // (struct wlr_text_input_v3*)
+		struct wl_signal commit;           // (struct wlr_text_input_v3*)
+		struct wl_signal disable;          // (struct wlr_text_input_v3*)
+		struct wl_signal cursor_rectangle; // (struct wlr_text_input_v3*)
+		struct wl_signal destroy;          // (struct wlr_text_input_v3*)
 	} events;
 };
 

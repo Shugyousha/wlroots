@@ -158,6 +158,8 @@ static void text_input_set_cursor_rectangle(struct wl_client *client,
 	text_input->pending.cursor_rectangle.y = y;
 	text_input->pending.cursor_rectangle.width = width;
 	text_input->pending.cursor_rectangle.height = height;
+
+	wlr_signal_emit_safe(&text_input->events.cursor_rectangle, text_input);
 }
 
 static void text_input_commit(struct wl_client *client,

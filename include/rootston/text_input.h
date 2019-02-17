@@ -28,6 +28,7 @@ struct roots_input_method_relay {
 	struct wl_listener text_input_enable;
 	struct wl_listener text_input_commit;
 	struct wl_listener text_input_disable;
+	struct wl_listener text_input_cursor_rectangle;
 	struct wl_listener text_input_destroy;
 
 	struct wl_listener input_method_new;

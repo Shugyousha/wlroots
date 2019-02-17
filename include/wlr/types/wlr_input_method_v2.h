@@ -35,7 +35,7 @@ struct wlr_input_method_v2 {
 
 	struct wlr_seat *seat;
 
-	struct wlr_input_popup_surface *popup_surface;
+	struct wlr_input_popup_surface_v2 *popup_surface;
 
 	struct wlr_input_method_v2_state pending;
 	struct wlr_input_method_v2_state current;

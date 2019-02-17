@@ -166,6 +166,22 @@ static void handle_text_input_disable(struct wl_listener *listener,
 	relay_disable_text_input(relay, text_input);
 }
 
+static void handle_text_input_cursor_rectangle(struct wl_listener *listener,
+		void *data) {
+	struct roots_input_method_relay *relay = wl_container_of(listener, relay,
+		text_input_cursor_rectangle);
+	struct roots_text_input *text_input = text_input_to_roots(relay,
+		(struct wlr_text_input_v3*)data);
+	struct wlr_text_input_v3* wlr_text_input = text_input->input;
+
+	int32_t x = wlr_text_input->pending.cursor_rectangle.x;
+	int32_t y = wlr_text_input->pending.cursor_rectangle.y;
+	int32_t width = wlr_text_input->pending.cursor_rectangle.width;
+	int32_t height = wlr_text_input->pending.cursor_rectangle.height;
+	wlr_input_popup_surface_v2_send_text_input_rectangle(
+		relay->input_method->popup_surface, x, y, width, height);
+}
+
 static void handle_text_input_destroy(struct wl_listener *listener,
 		void *data) {
 	struct roots_input_method_relay *relay = wl_container_of(listener, relay,
@@ -209,6 +225,9 @@ struct roots_text_input *roots_text_input_create(
 
 	wl_signal_add(&text_input->events.disable, &relay->text_input_disable);
 	relay->text_input_disable.notify = handle_text_input_disable;
+
+	wl_signal_add(&text_input->events.cursor_rectangle, &relay->text_input_cursor_rectangle);
+	relay->text_input_cursor_rectangle.notify = handle_text_input_cursor_rectangle;
 
 	wl_signal_add(&text_input->events.destroy, &relay->text_input_destroy);
 	relay->text_input_destroy.notify = handle_text_input_destroy;
