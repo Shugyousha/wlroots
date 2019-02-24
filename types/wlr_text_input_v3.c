@@ -245,6 +245,7 @@ static void text_input_manager_get_text_input(struct wl_client *client,
 	wl_signal_init(&text_input->events.enable);
 	wl_signal_init(&text_input->events.commit);
 	wl_signal_init(&text_input->events.disable);
+	wl_signal_init(&text_input->events.cursor_rectangle);
 	wl_signal_init(&text_input->events.destroy);
 
 	int version = wl_resource_get_version(resource);
