@@ -173,6 +173,7 @@ static void commit(struct zwp_text_input_v3 *text_input) {
 static void send_status_update(struct zwp_text_input_v3 *text_input) {
 	zwp_text_input_v3_set_surrounding_text(text_input, buffer, strlen(buffer), strlen(buffer));
 	zwp_text_input_v3_set_text_change_cause(text_input, ZWP_TEXT_INPUT_V3_CHANGE_CAUSE_INPUT_METHOD);
+	zwp_text_input_v3_set_cursor_rectangle(text_input, current.preedit.cursor_begin, 0, 10, 10);
 	commit(text_input);
 }
 
