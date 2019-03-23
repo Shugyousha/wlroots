@@ -165,6 +165,7 @@ static void im_get_input_popup_surface(struct wl_client *client,
 	popup_surface->resource = popup_surface_resource;
 	popup_surface->surface = surface;
 	wl_signal_add(&surface->events.destroy, &popup_surface->surface_destroy);
+	wlr_signal_emit_safe(&input_method->events.popup_surface, popup_surface);
 }
 
 void wlr_input_popup_surface_v2_send_text_input_rectangle(
@@ -270,6 +271,7 @@ static void manager_get_input_method(struct wl_client *client,
 	}
 	wl_signal_init(&input_method->events.commit);
 	wl_signal_init(&input_method->events.destroy);
+	wl_signal_init(&input_method->events.popup_surface);
 	int version = wl_resource_get_version(resource);
 	struct wl_resource *im_resource = wl_resource_create(client,
 		&zwp_input_method_v2_interface, version, input_method_id);

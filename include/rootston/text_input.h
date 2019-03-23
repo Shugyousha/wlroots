@@ -34,6 +34,10 @@ struct roots_input_method_relay {
 	struct wl_listener input_method_new;
 	struct wl_listener input_method_commit;
 	struct wl_listener input_method_destroy;
+
+	struct wl_listener input_popup_surface_new;
+	struct wl_listener text_input_rectangle;
+	struct wl_listener input_popup_surface_destroy;
 };
 
 struct roots_text_input {

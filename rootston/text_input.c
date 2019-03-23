@@ -85,6 +85,15 @@ static void handle_im_destroy(struct wl_listener *listener, void *data) {
 	}
 }
 
+static void handle_input_popup_surface_destroy(struct wl_listener *listener, void *data) {
+	struct roots_input_method_relay *relay = wl_container_of(listener, relay,
+		input_method_destroy);
+	struct wlr_input_popup_surface_v2* popup_surface = data;
+	assert(popup_surface == relay->input_method->popup_surface);
+	relay->input_method->popup_surface = NULL;
+}
+
+
 static void relay_send_im_done(struct roots_input_method_relay *relay,
 		struct wlr_text_input_v3 *input) {
 	struct wlr_input_method_v2 *input_method = relay->input_method;
@@ -255,6 +264,27 @@ static void relay_handle_text_input(struct wl_listener *listener,
 	wl_list_insert(&relay->text_inputs, &text_input->link);
 }
 
+static void relay_handle_input_popup_surface(struct wl_listener *listener,
+		void *data) {
+	struct roots_input_method_relay *relay = wl_container_of(listener, relay,
+		input_popup_surface_new);
+	struct wlr_input_popup_surface_v2 *popup_surface = data;
+	if (relay->seat->seat != relay->input_method->seat) {
+		return;
+	}
+
+	if (relay->input_method == NULL) {
+		wlr_log(WLR_INFO, "Attempted to get popup surface without input method");
+		return;
+	}
+
+	relay->input_method->popup_surface = popup_surface;
+
+	wl_signal_add(&popup_surface->events.destroy,
+		&relay->input_popup_surface_destroy);
+	relay->input_popup_surface_destroy.notify = handle_input_popup_surface_destroy;
+}
+
 static void relay_handle_input_method(struct wl_listener *listener,
 		void *data) {
 	struct roots_input_method_relay *relay = wl_container_of(listener, relay,
@@ -277,6 +307,9 @@ static void relay_handle_input_method(struct wl_listener *listener,
 	wl_signal_add(&relay->input_method->events.destroy,
 		&relay->input_method_destroy);
 	relay->input_method_destroy.notify = handle_im_destroy;
+	relay->input_popup_surface_new.notify = relay_handle_input_popup_surface;
+	wl_signal_add(&relay->input_method->events.popup_surface,
+		&relay->input_popup_surface_new);
 
 	struct roots_text_input *text_input = relay_get_focusable_text_input(relay);
 	if (text_input) {

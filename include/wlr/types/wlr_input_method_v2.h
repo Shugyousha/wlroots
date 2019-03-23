@@ -50,6 +50,7 @@ struct wlr_input_method_v2 {
 	struct {
 		struct wl_signal commit; // (struct wlr_input_method_v2*)
 		struct wl_signal destroy; // (struct wlr_input_method_v2*)
+		struct wl_signal popup_surface; // (struct wlr_input_popup_surface_v2*)
 	} events;
 };
 
@@ -58,8 +59,6 @@ struct wlr_input_popup_surface_v2 {
 	struct wl_listener surface_destroy;
 
 	struct wlr_surface *surface;
-
-	struct wlr_input_method_v2 im;
 
 	struct {
 		struct wl_signal text_input_rectangle; // (struct wlr_input_popup_surface_v2*)
