@@ -25,11 +25,22 @@ static void input_popup_surface_resource_destroy(struct wl_resource *resource) {
 	if (!popup_surface) {
 		return;
 	}
+
+	printf("input_popup_surface_resource_destroy called\n");
+
 	input_popup_surface_destroy(popup_surface);
 }
 
 static void input_popup_surface_destroy_handler(struct wl_client *client,
 		struct wl_resource *resource) {
+	struct wlr_input_popup_surface_v2 * popup_surface =
+		popup_surface_from_resource(resource);
+	if (!popup_surface) {
+		return;
+	}
+
+	printf("input_popup_surface_destroy_handler called\n");
+
 	wl_resource_destroy(resource);
 }
 
