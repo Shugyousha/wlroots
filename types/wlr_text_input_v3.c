@@ -145,8 +145,6 @@ static void text_input_set_content_type(struct wl_client *client,
 	text_input->pending.content_type.purpose = purpose;
 }
 
-// TODO: hook it up to the corresponding
-// zwp_input_popup_surface_v2::text_input_rectangle event?
 static void text_input_set_cursor_rectangle(struct wl_client *client,
 		struct wl_resource *resource, int32_t x, int32_t y, int32_t width,
 		int32_t height) {
