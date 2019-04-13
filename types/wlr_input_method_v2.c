@@ -129,11 +129,6 @@ static void im_get_input_popup_surface(struct wl_client *client,
 		struct wl_resource *resource, uint32_t id,
 		struct wl_resource *surface_resource) {
 
-	// TODO:
-	// * implement getting placement information
-	// * use xdg_popup and layer_shell_popup to create a popup in
-	//   virtboard as demonstrated in examples/layer-shell.c
-
 	struct wlr_surface *surface = wlr_surface_from_resource(surface_resource);
 
 	struct wlr_input_method_v2 *input_method =
